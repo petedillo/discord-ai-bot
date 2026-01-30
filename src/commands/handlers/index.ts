@@ -1,0 +1,4 @@
+// Command handlers barrel export
+export { handleAskCommand } from './ask.js';
+export { handleInfoCommand } from './info.js';
+export { handleToolsCommand } from './tools.js';
