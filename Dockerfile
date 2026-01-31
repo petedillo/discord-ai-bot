@@ -1,5 +1,8 @@
+
+# syntax=docker/dockerfile:1.4
+
 # Build stage
-FROM node:20-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +15,7 @@ COPY src ./src
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM --platform=$TARGETPLATFORM node:20-alpine
 
 WORKDIR /app
 

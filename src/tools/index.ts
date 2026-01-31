@@ -11,8 +11,8 @@ export { registry };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Find and load all *.tool.ts files
-const toolFiles = readdirSync(__dirname).filter((file) => file.endsWith('.tool.ts'));
+// Find and load all *.tool.js files (compiled from *.tool.ts)
+const toolFiles = readdirSync(__dirname).filter((file) => file.endsWith('.tool.js'));
 
 for (const file of toolFiles) {
   try {

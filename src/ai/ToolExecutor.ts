@@ -57,10 +57,10 @@ export class ToolExecutor {
         // Notify about tool call
         onToolCall?.(toolName, toolArgs);
 
-        // Execute the tool
+        // Execute the tool with timing
         const tool = registry.get(toolName);
         let result: ToolResult;
-
+        const start = Date.now();
         if (!tool) {
           result = { success: false, error: `Unknown tool: ${toolName}` };
         } else {
@@ -73,8 +73,11 @@ export class ToolExecutor {
             };
           }
         }
+        const durationMs = Date.now() - start;
+        // Basic logging
+        console.log(`[ToolExecutor] Tool '${toolName}' executed in ${durationMs}ms`);
 
-        toolsUsed.push({ name: toolName, args: toolArgs, result });
+        toolsUsed.push({ name: toolName, args: toolArgs, result, durationMs });
 
         // Add tool result to conversation
         messages.push({

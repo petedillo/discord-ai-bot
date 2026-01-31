@@ -87,6 +87,7 @@ export interface ToolExecutionRecord {
   name: string;
   args: Record<string, unknown>;
   result: ToolResult;
+  durationMs?: number;
 }
 
 /**
