@@ -15,7 +15,7 @@ COPY src ./src
 RUN npm run build
 
 # Production stage
-FROM --platform=$TARGETPLATFORM node:20-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
