@@ -8,6 +8,7 @@ import type {
   OnToolCallCallback,
   ToolResult,
 } from './types.js';
+import { toolExecutionsTotal, toolExecutionDuration } from '../metrics/index.js';
 
 export class ToolExecutor {
   private readonly ollamaClient: OllamaClient;
@@ -63,17 +64,28 @@ export class ToolExecutor {
         const start = Date.now();
         if (!tool) {
           result = { success: false, error: `Unknown tool: ${toolName}` };
+          // Track unknown tool as error
+          toolExecutionsTotal.labels(toolName, 'error').inc();
         } else {
           try {
             result = await tool.execute(toolArgs);
+            // Track successful execution
+            toolExecutionsTotal.labels(toolName, 'success').inc();
           } catch (error) {
             result = {
               success: false,
               error: error instanceof Error ? error.message : 'Unknown error',
             };
+            // Track failed execution
+            toolExecutionsTotal.labels(toolName, 'error').inc();
           }
         }
         const durationMs = Date.now() - start;
+        const durationSeconds = durationMs / 1000;
+        
+        // Record duration metric
+        toolExecutionDuration.labels(toolName).observe(durationSeconds);
+        
         // Basic logging
         console.log(`[ToolExecutor] Tool '${toolName}' executed in ${durationMs}ms`);
 

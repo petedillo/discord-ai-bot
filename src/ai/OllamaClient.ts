@@ -2,6 +2,7 @@
 import { Ollama } from 'ollama';
 import type { ChatResponse, Message } from 'ollama';
 import type { OllamaToolDefinition } from './types.js';
+import { ollamaAvailable, ollamaRequestDuration } from '../metrics/index.js';
 
 export interface OllamaClientConfig {
   host: string;
@@ -24,17 +25,32 @@ export class OllamaClient {
    * Send a chat message with optional tool definitions
    */
   async chat(messages: Message[], tools: OllamaToolDefinition[] = []): Promise<ChatResponse> {
-    const options: Parameters<Ollama['chat']>[0] = {
-      model: this.model,
-      messages,
-      stream: false,
-    };
+    const startTime = Date.now();
+    
+    try {
+      const options: Parameters<Ollama['chat']>[0] = {
+        model: this.model,
+        messages,
+        stream: false,
+      };
 
-    if (tools.length > 0) {
-      options.tools = tools;
+      if (tools.length > 0) {
+        options.tools = tools;
+      }
+
+      const response = await this.client.chat(options);
+      
+      // Record successful request duration
+      const duration = (Date.now() - startTime) / 1000;
+      ollamaRequestDuration.observe(duration);
+      
+      return response;
+    } catch (error) {
+      // Record failed request duration
+      const duration = (Date.now() - startTime) / 1000;
+      ollamaRequestDuration.observe(duration);
+      throw error;
     }
-
-    return await this.client.chat(options);
   }
 
   /**
@@ -43,9 +59,11 @@ export class OllamaClient {
   async isAvailable(): Promise<boolean> {
     try {
       await this.client.list();
+      ollamaAvailable.set(1);
       return true;
     } catch (error) {
       console.warn('Ollama service unavailable:', error instanceof Error ? error.message : error);
+      ollamaAvailable.set(0);
       return false;
     }
   }
