@@ -7,6 +7,10 @@ import { createInteractionHandler } from './events/interactionCreate.js';
 import { startMetricsServer } from './metrics/server.js';
 import { discordBotUp, discordWebsocketLatency } from './metrics/index.js';
 
+// Version info
+const VERSION = '2.0.0';
+const BUILD_DATE = '2026-02-02';
+
 // Load tools (auto-registers them)
 await import('./tools/index.js');
 
@@ -56,7 +60,13 @@ client.on('interactionCreate', createInteractionHandler(ollamaClient, config.dis
 
 // Start bot
 export async function start(): Promise<void> {
-  console.log('Starting Discord AI Bot...');
+  const startupTime = new Date().toISOString();
+  
+  console.log('═══════════════════════════════════════════════════════');
+  console.log(`  Discord AI Bot v${VERSION}`);
+  console.log(`  Build: ${BUILD_DATE}`);
+  console.log(`  Started: ${startupTime}`);
+  console.log('═══════════════════════════════════════════════════════');
   
   // Start metrics server if enabled
   if (config.metrics.enabled) {

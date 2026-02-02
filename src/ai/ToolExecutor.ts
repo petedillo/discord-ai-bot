@@ -10,6 +10,13 @@ import type {
 } from './types.js';
 import { toolExecutionsTotal, toolExecutionDuration } from '../metrics/index.js';
 
+// Tool usage hints - concise guidance for the AI on how to use each tool
+const TOOL_HINTS: Record<string, string> = {
+  qbittorrent: `Actions: list (show torrents, optional filter: downloading|seeding|completed|paused|active), details (requires hash), speeds, transfer_info. Use "list" for "show downloads" questions.`,
+  calculate: `Evaluate math expressions. Examples: "2+2", "sqrt(16)", "pow(2,8)". Supports +,-,*,/,% and functions: sqrt, pow, sin, cos, tan, log, abs, ceil, floor, round, PI, E.`,
+  get_current_time: `Get current time. Optional timezone param (IANA format: "America/New_York", "Europe/London"). Defaults to UTC.`,
+};
+
 export class ToolExecutor {
   private readonly ollamaClient: OllamaClient;
   private readonly maxIterations: number;
@@ -20,13 +27,32 @@ export class ToolExecutor {
   }
 
   /**
+   * Build a concise system prompt with tool hints for registered tools only
+   */
+  private buildSystemPrompt(): string {
+    const toolNames = registry.getToolNames();
+    const hints = toolNames
+      .map((name) => TOOL_HINTS[name] ? `• ${name}: ${TOOL_HINTS[name]}` : null)
+      .filter(Boolean)
+      .join('\n');
+
+    return `You are a helpful assistant with tools. Use the simplest approach to answer questions. Don't ask for parameters unless required.
+
+Tools:
+${hints}`;
+  }
+
+  /**
    * Process a user message, executing tools as needed
    */
   async processMessage(
     userMessage: string,
     onToolCall?: OnToolCallCallback
   ): Promise<ProcessMessageResult> {
-    const messages: Message[] = [{ role: 'user', content: userMessage }];
+    const messages: Message[] = [
+      { role: 'system', content: this.buildSystemPrompt() },
+      { role: 'user', content: userMessage }
+    ];
     const tools = registry.getToolSchemas();
     const toolsUsed: ToolExecutionRecord[] = [];
     let iterations = 0;
