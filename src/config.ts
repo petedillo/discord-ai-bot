@@ -15,6 +15,10 @@ interface Config {
   tools: {
     maxIterations: number;
   };
+  metrics: {
+    enabled: boolean;
+    port: number;
+  };
 }
 
 function getEnvVar(name: string, defaultValue?: string): string {
@@ -43,6 +47,10 @@ export const config: Config = {
   },
   tools: {
     maxIterations: 5,
+  },
+  metrics: {
+    enabled: getEnvVar('METRICS_ENABLED', 'true') === 'true',
+    port: parseInt(getEnvVar('METRICS_PORT', '9090'), 10),
   },
 };
 
