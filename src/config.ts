@@ -19,6 +19,10 @@ interface Config {
     enabled: boolean;
     port: number;
   };
+  qbittorrent: {
+    host: string;
+    enabled: boolean;
+  };
 }
 
 function getEnvVar(name: string, defaultValue?: string): string {
@@ -51,6 +55,10 @@ export const config: Config = {
   metrics: {
     enabled: getEnvVar('METRICS_ENABLED', 'true') === 'true',
     port: parseInt(getEnvVar('METRICS_PORT', '9090'), 10),
+  },
+  qbittorrent: {
+    host: getEnvVar('QBIT_HOST', 'http://192.168.50.21:8080'),
+    enabled: getEnvVar('QBIT_ENABLED', 'true') === 'true',
   },
 };
 
