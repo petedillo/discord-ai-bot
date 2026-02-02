@@ -2,8 +2,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ToolExecutor } from './ToolExecutor.js';
 import { OllamaClient } from './OllamaClient.js';
 import { registry } from './ToolRegistry.js';
-import { toolExecutionsTotal, toolExecutionDuration, getMetrics, resetMetrics } from '../metrics/index.js';
+import { getMetrics, resetMetrics } from '../metrics/index.js';
 import type { ITool } from './types.js';
+import type { Ollama } from 'ollama';
+
+// Helper to create a mock Ollama client
+function createMockOllamaClient() {
+  return {
+    chat: vi.fn(),
+    list: vi.fn(),
+  } as unknown as Ollama;
+}
 
 describe('ToolExecutor Metrics', () => {
   beforeEach(() => {
@@ -28,15 +37,8 @@ describe('ToolExecutor Metrics', () => {
       };
       registry.register(mockTool);
 
-      const ollamaClient = new OllamaClient({
-        host: 'http://localhost:11434',
-        model: 'test-model',
-        timeout: 30000,
-      });
-
-      // Mock Ollama responses
-      const mockChat = vi.spyOn((ollamaClient as any).client, 'chat');
-      mockChat
+      const mockOllama = createMockOllamaClient();
+      (mockOllama.chat as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({
           message: {
             role: 'assistant',
@@ -45,7 +47,7 @@ describe('ToolExecutor Metrics', () => {
               {
                 function: {
                   name: 'test_tool',
-                  arguments: {},
+                  arguments: {} as Record<string, unknown>,
                 },
               },
             ],
@@ -59,6 +61,13 @@ describe('ToolExecutor Metrics', () => {
           },
           done: true,
         });
+
+      const ollamaClient = new OllamaClient({
+        host: 'http://localhost:11434',
+        model: 'test-model',
+        timeout: 30000,
+        client: mockOllama,
+      });
 
       const executor = new ToolExecutor(ollamaClient, 5);
       await executor.processMessage('test message');
@@ -85,14 +94,8 @@ describe('ToolExecutor Metrics', () => {
       };
       registry.register(mockTool);
 
-      const ollamaClient = new OllamaClient({
-        host: 'http://localhost:11434',
-        model: 'test-model',
-        timeout: 30000,
-      });
-
-      const mockChat = vi.spyOn((ollamaClient as any).client, 'chat');
-      mockChat
+      const mockOllama = createMockOllamaClient();
+      (mockOllama.chat as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({
           message: {
             role: 'assistant',
@@ -101,7 +104,7 @@ describe('ToolExecutor Metrics', () => {
               {
                 function: {
                   name: 'failing_tool',
-                  arguments: {},
+                  arguments: {} as Record<string, unknown>,
                 },
               },
             ],
@@ -115,6 +118,13 @@ describe('ToolExecutor Metrics', () => {
           },
           done: true,
         });
+
+      const ollamaClient = new OllamaClient({
+        host: 'http://localhost:11434',
+        model: 'test-model',
+        timeout: 30000,
+        client: mockOllama,
+      });
 
       const executor = new ToolExecutor(ollamaClient, 5);
       await executor.processMessage('test message');
@@ -139,14 +149,8 @@ describe('ToolExecutor Metrics', () => {
       };
       registry.register(mockTool);
 
-      const ollamaClient = new OllamaClient({
-        host: 'http://localhost:11434',
-        model: 'test-model',
-        timeout: 30000,
-      });
-
-      const mockChat = vi.spyOn((ollamaClient as any).client, 'chat');
-      mockChat
+      const mockOllama = createMockOllamaClient();
+      (mockOllama.chat as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({
           message: {
             role: 'assistant',
@@ -155,7 +159,7 @@ describe('ToolExecutor Metrics', () => {
               {
                 function: {
                   name: 'timed_tool',
-                  arguments: {},
+                  arguments: {} as Record<string, unknown>,
                 },
               },
             ],
@@ -169,6 +173,13 @@ describe('ToolExecutor Metrics', () => {
           },
           done: true,
         });
+
+      const ollamaClient = new OllamaClient({
+        host: 'http://localhost:11434',
+        model: 'test-model',
+        timeout: 30000,
+        client: mockOllama,
+      });
 
       const executor = new ToolExecutor(ollamaClient, 5);
       await executor.processMessage('test');

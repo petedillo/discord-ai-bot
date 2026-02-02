@@ -8,6 +8,7 @@ export interface OllamaClientConfig {
   host: string;
   model: string;
   timeout: number;
+  client?: Ollama;  // Optional for dependency injection in tests
 }
 
 export class OllamaClient {
@@ -16,7 +17,7 @@ export class OllamaClient {
   private readonly timeout: number;
 
   constructor(config: OllamaClientConfig) {
-    this.client = new Ollama({ host: config.host });
+    this.client = config.client ?? new Ollama({ host: config.host });
     this.model = config.model;
     this.timeout = config.timeout;
   }
