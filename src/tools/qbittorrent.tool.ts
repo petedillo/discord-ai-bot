@@ -2,7 +2,7 @@ import { BaseTool } from './BaseTool.js';
 import { qbittorrentClient } from '../clients/index.js';
 import type { ToolSchema, ToolResult } from '../ai/types.js';
 
-interface QBittorrentToolArgs {
+export interface QBittorrentToolArgs {
   action: 'list' | 'details' | 'speeds' | 'transfer_info';
   filter?: 'all' | 'downloading' | 'seeding' | 'completed' | 'paused' | 'active' | 'inactive' | 'stalled';
   hash?: string;
@@ -98,7 +98,7 @@ export class QBittorrentTool extends BaseTool<QBittorrentToolArgs> {
     };
 
     const torrentList = torrents
-      .map((t: Record<string, unknown>) => {
+      .map((t) => {
         const progress = ((t.progress as number) * 100).toFixed(1);
         return `• **${t.name}** [${t.state}] ${progress}% (↓ ${formatSpeed(t.dl_speed as number)} ↑ ${formatSpeed(t.up_speed as number)})`;
       })

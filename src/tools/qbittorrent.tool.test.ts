@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { QBittorrentTool } from './qbittorrent.tool.js';
+import { QBittorrentTool, type QBittorrentToolArgs } from './qbittorrent.tool.js';
 import * as metrics from '../metrics/index.js';
-
-interface QBittorrentToolArgs {
-  action: 'list' | 'details' | 'speeds' | 'transfer_info';
-  filter?: string;
-  hash?: string;
-}
 
 describe('QBittorrentTool', () => {
   let tool: QBittorrentTool;
@@ -39,13 +33,17 @@ describe('QBittorrentTool', () => {
 
   describe('execute action validation', () => {
     it('returns error on invalid action', async () => {
-      const result = await tool.execute({ action: 'invalid_action' } as QBittorrentToolArgs);
+      const result = await tool.execute(
+        { action: 'invalid_action' } as unknown as QBittorrentToolArgs
+      );
 
       expect(result.success).toBe(false);
     });
 
     it('returns error without hash for details action', async () => {
-      const result = await tool.execute({ action: 'details' } as QBittorrentToolArgs);
+      const result = await tool.execute(
+        { action: 'details' } as unknown as QBittorrentToolArgs
+      );
 
       expect(result.success).toBe(false);
       if (!result.success) {
