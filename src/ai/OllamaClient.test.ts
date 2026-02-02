@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OllamaClient } from './OllamaClient.js';
-import { ollamaAvailable, ollamaRequestDuration, getMetrics, resetMetrics } from '../metrics/index.js';
+import { getMetrics, resetMetrics } from '../metrics/index.js';
 
 describe('OllamaClient Metrics', () => {
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('OllamaClient Metrics', () => {
       });
 
       // Mock the internal Ollama client to avoid real API calls
-      const mockChat = vi.spyOn((client as any).client, 'chat');
+      const mockChat = vi.spyOn((client as unknown as { client: { chat: unknown } }).client, 'chat');
       mockChat.mockResolvedValue({
         message: { role: 'assistant', content: 'test response' },
         done: true,
@@ -36,7 +36,7 @@ describe('OllamaClient Metrics', () => {
         timeout: 30000,
       });
 
-      const mockChat = vi.spyOn((client as any).client, 'chat');
+      const mockChat = vi.spyOn((client as unknown as { client: { chat: unknown } }).client, 'chat');
       mockChat.mockResolvedValue({
         message: { role: 'assistant', content: 'test' },
         done: true,
@@ -60,7 +60,7 @@ describe('OllamaClient Metrics', () => {
       });
 
       // Mock list to succeed
-      const mockList = vi.spyOn((client as any).client, 'list');
+      const mockList = vi.spyOn((client as unknown as { client: { list: unknown } }).client, 'list');
       mockList.mockResolvedValue({ models: [] });
 
       const available = await client.isAvailable();
@@ -78,7 +78,7 @@ describe('OllamaClient Metrics', () => {
       });
 
       // Mock list to fail
-      const mockList = vi.spyOn((client as any).client, 'list');
+      const mockList = vi.spyOn((client as unknown as { client: { list: unknown } }).client, 'list');
       mockList.mockRejectedValue(new Error('Connection refused'));
 
       const available = await client.isAvailable();

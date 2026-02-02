@@ -15,7 +15,7 @@ export function getMetricsApp() {
         const metrics = await getMetrics();
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end(metrics);
-      } catch (error) {
+      } catch {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Error generating metrics');
       }

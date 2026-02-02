@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ToolExecutor } from './ToolExecutor.js';
 import { OllamaClient } from './OllamaClient.js';
 import { registry } from './ToolRegistry.js';
-import { toolExecutionsTotal, toolExecutionDuration, getMetrics, resetMetrics } from '../metrics/index.js';
+import { getMetrics, resetMetrics } from '../metrics/index.js';
 import type { ITool } from './types.js';
 
 describe('ToolExecutor Metrics', () => {
@@ -35,7 +35,7 @@ describe('ToolExecutor Metrics', () => {
       });
 
       // Mock Ollama responses
-      const mockChat = vi.spyOn((ollamaClient as any).client, 'chat');
+      const mockChat = vi.spyOn((ollamaClient as unknown as { client: { chat: unknown } }).client, 'chat');
       mockChat
         .mockResolvedValueOnce({
           message: {
@@ -45,7 +45,7 @@ describe('ToolExecutor Metrics', () => {
               {
                 function: {
                   name: 'test_tool',
-                  arguments: {},
+                  arguments: {} as Record<string, unknown>,
                 },
               },
             ],
@@ -91,7 +91,7 @@ describe('ToolExecutor Metrics', () => {
         timeout: 30000,
       });
 
-      const mockChat = vi.spyOn((ollamaClient as any).client, 'chat');
+      const mockChat = vi.spyOn((ollamaClient as unknown as { client: { chat: unknown } }).client, 'chat');
       mockChat
         .mockResolvedValueOnce({
           message: {
@@ -101,7 +101,7 @@ describe('ToolExecutor Metrics', () => {
               {
                 function: {
                   name: 'failing_tool',
-                  arguments: {},
+                  arguments: {} as Record<string, unknown>,
                 },
               },
             ],
@@ -145,7 +145,7 @@ describe('ToolExecutor Metrics', () => {
         timeout: 30000,
       });
 
-      const mockChat = vi.spyOn((ollamaClient as any).client, 'chat');
+      const mockChat = vi.spyOn((ollamaClient as unknown as { client: { chat: unknown } }).client, 'chat');
       mockChat
         .mockResolvedValueOnce({
           message: {
@@ -155,7 +155,7 @@ describe('ToolExecutor Metrics', () => {
               {
                 function: {
                   name: 'timed_tool',
-                  arguments: {},
+                  arguments: {} as Record<string, unknown>,
                 },
               },
             ],
