@@ -42,8 +42,11 @@ export async function handleAskCommand(
   ollamaClient: OllamaClient,
   allowedUsers: string[]
 ): Promise<void> {
+  logger.info(`/ask command received from user ${interaction.user.tag} (${interaction.user.id})`);
+
   // Check authorization first
   if (!isUserAuthorized(interaction.user.id, allowedUsers)) {
+    logger.info(`User ${interaction.user.id} is not authorized`);
     try {
       await interaction.reply({
         content: 'You are not authorized to use this command.',
@@ -68,20 +71,25 @@ export async function handleAskCommand(
 
   try {
     const question = interaction.options.getString('question', true);
+    logger.info(`Processing question: "${question.substring(0, 100)}${question.length > 100 ? '...' : ''}"`);
 
     // Check if Ollama is available
     const isAvailable = await ollamaClient.isAvailable();
     if (!isAvailable) {
+      logger.warn('Ollama service unavailable');
       await interaction.editReply({
         content: 'AI service is currently unavailable. Please try again later.',
       });
       return;
     }
+    logger.info('Ollama service is available');
 
     const executor = new ToolExecutor(ollamaClient);
 
     // Process message with tool support
     const result = await executor.processMessage(question);
+    logger.info(`Tool execution completed. Tools used: ${result.toolsUsed.map((t) => t.name).join(', ') || 'none'}`);
+    logger.debug(`Response length: ${result.response.length} characters`);
 
     // Build response embed
     const embed = new EmbedBuilder()
@@ -102,6 +110,7 @@ export async function handleAskCommand(
 
     try {
       await interaction.editReply({ embeds: [embed] });
+      logger.info(`/ask command completed successfully for user ${interaction.user.id}`);
     } catch (replyErr) {
       logger.error(
         'Failed to send embed reply:',
