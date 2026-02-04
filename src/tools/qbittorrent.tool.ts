@@ -76,37 +76,26 @@ export class QBittorrentTool extends BaseTool<QBittorrentToolArgs> {
     if (torrents.length === 0) {
       return {
         success: true,
-        data: 'No torrents found.',
+        action: 'list',
+        filter: filter || 'all',
+        count: 0,
+        torrents: [],
       };
     }
 
-    const formatSize = (bytes: number): string => {
-      const units = ['B', 'KB', 'MB', 'GB'];
-      let size = bytes;
-      let unitIndex = 0;
-
-      while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024;
-        unitIndex++;
-      }
-
-      return `${size.toFixed(2)} ${units[unitIndex]}`;
-    };
-
-    const formatSpeed = (bytesPerSec: number): string => {
-      return `${formatSize(bytesPerSec)}/s`;
-    };
-
-    const torrentList = torrents
-      .map((t) => {
-        const progress = ((t.progress as number) * 100).toFixed(1);
-        return `• **${t.name}** [${t.state}] ${progress}% (↓ ${formatSpeed(t.dl_speed as number)} ↑ ${formatSpeed(t.up_speed as number)})`;
-      })
-      .join('\n');
-
     return {
       success: true,
-      data: `**Torrents** (${filter ? `filter: ${filter}` : 'all'}):\n${torrentList}`,
+      action: 'list',
+      filter: filter || 'all',
+      count: torrents.length,
+      torrents: torrents.map((t) => ({
+        name: t.name,
+        hash: t.hash,
+        state: t.state,
+        progress: Math.round((t.progress as number) * 100),
+        dlSpeed: t.dl_speed,
+        upSpeed: t.up_speed,
+      })),
     };
   }
 
@@ -120,101 +109,45 @@ export class QBittorrentTool extends BaseTool<QBittorrentToolArgs> {
 
     const props = await qbittorrentClient.getTorrentProperties(hash);
 
-    const formatSize = (bytes: number): string => {
-      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-      let size = bytes;
-      let unitIndex = 0;
-
-      while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024;
-        unitIndex++;
-      }
-
-      return `${size.toFixed(2)} ${units[unitIndex]}`;
-    };
-
-    const formatDate = (timestamp: number): string => {
-      if (timestamp <= 0) return 'Not completed';
-      const dateStr = new Date(timestamp * 1000).toISOString().split('T')[0];
-      return dateStr || 'Invalid date';
-    };
-
-    const progress = ((props.total_downloaded / props.total_size) * 100).toFixed(1);
-
     return {
       success: true,
-      data: `**Torrent Details**
-• **Name**: ${props.name}
-• **Hash**: ${props.hash}
-• **Size**: ${formatSize(props.total_size)}
-• **Downloaded**: ${formatSize(props.total_downloaded)} (${progress}%)
-• **Uploaded**: ${formatSize(props.total_uploaded)}
-• **Added**: ${formatDate(props.addition_date)}
-• **Completed**: ${formatDate(props.completion_date)}`,
+      action: 'details',
+      torrent: {
+        name: props.name,
+        hash: props.hash,
+        comment: props.comment,
+        totalSize: props.total_size,
+        totalDownloaded: props.total_downloaded,
+        totalUploaded: props.total_uploaded,
+        progress: Math.round((props.total_downloaded / props.total_size) * 100),
+        additionDate: props.addition_date,
+        completionDate: props.completion_date,
+      },
     };
   }
 
   private async handleSpeeds(): Promise<ToolResult> {
     const transferInfo = await qbittorrentClient.getTransferInfo();
 
-    const formatSpeed = (bytesPerSec: number): string => {
-      const units = ['B', 'KB', 'MB', 'GB'];
-      let speed = bytesPerSec;
-      let unitIndex = 0;
-
-      while (speed >= 1024 && unitIndex < units.length - 1) {
-        speed /= 1024;
-        unitIndex++;
-      }
-
-      return `${speed.toFixed(2)} ${units[unitIndex]}/s`;
-    };
-
     return {
       success: true,
-      data: `**Current Speeds**
-• **Download**: ${formatSpeed(transferInfo.dl_info_speed)}
-• **Upload**: ${formatSpeed(transferInfo.up_info_speed)}`,
+      action: 'speeds',
+      downloadSpeed: transferInfo.dl_info_speed,
+      uploadSpeed: transferInfo.up_info_speed,
     };
   }
 
   private async handleTransferInfo(): Promise<ToolResult> {
     const transferInfo = await qbittorrentClient.getTransferInfo();
 
-    const formatSize = (bytes: number): string => {
-      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-      let size = bytes;
-      let unitIndex = 0;
-
-      while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024;
-        unitIndex++;
-      }
-
-      return `${size.toFixed(2)} ${units[unitIndex]}`;
-    };
-
-    const formatSpeed = (bytesPerSec: number): string => {
-      const units = ['B', 'KB', 'MB', 'GB'];
-      let speed = bytesPerSec;
-      let unitIndex = 0;
-
-      while (speed >= 1024 && unitIndex < units.length - 1) {
-        speed /= 1024;
-        unitIndex++;
-      }
-
-      return `${speed.toFixed(2)} ${units[unitIndex]}/s`;
-    };
-
     return {
       success: true,
-      data: `**Transfer Information**
-• **Download Speed**: ${formatSpeed(transferInfo.dl_info_speed)}
-• **Upload Speed**: ${formatSpeed(transferInfo.up_info_speed)}
-• **Total Downloaded**: ${formatSize(transferInfo.total_downloaded)}
-• **Total Uploaded**: ${formatSize(transferInfo.total_uploaded)}
-• **DHT Nodes**: ${transferInfo.dht_nodes}`,
+      action: 'transfer_info',
+      downloadSpeed: transferInfo.dl_info_speed,
+      uploadSpeed: transferInfo.up_info_speed,
+      totalDownloaded: transferInfo.total_downloaded,
+      totalUploaded: transferInfo.total_uploaded,
+      dhtNodes: transferInfo.dht_nodes,
     };
   }
 }

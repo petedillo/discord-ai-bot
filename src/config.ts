@@ -15,6 +15,13 @@ interface Config {
   tools: {
     maxIterations: number;
   };
+  toolExecutor: {
+    loggingEnabled: boolean;
+  };
+  summarizer: {
+    enabled: boolean;
+    model: string;
+  };
   metrics: {
     enabled: boolean;
     port: number;
@@ -51,6 +58,13 @@ export const config: Config = {
   },
   tools: {
     maxIterations: 5,
+  },
+  toolExecutor: {
+    loggingEnabled: getEnvVar('TOOL_EXECUTOR_LOGGING', 'false') === 'true',
+  },
+  summarizer: {
+    enabled: getEnvVar('SUMMARIZER_ENABLED', 'true') === 'true',
+    model: getEnvVar('SUMMARIZER_MODEL', 'qwen2.5:3b'),
   },
   metrics: {
     enabled: getEnvVar('METRICS_ENABLED', 'true') === 'true',
