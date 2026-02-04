@@ -202,7 +202,6 @@ describe('ToolExecutor Logging', () => {
 
   afterEach(() => {
     consoleSpy.mockRestore();
-    vi.unstubAllEnvs();
   });
 
   it('should log when TOOL_EXECUTOR_LOGGING is enabled', async () => {

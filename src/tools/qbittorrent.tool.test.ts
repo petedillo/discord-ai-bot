@@ -64,7 +64,7 @@ describe('QBittorrentTool', () => {
 
   describe('JSON output format - list action', () => {
     it('returns structured JSON for empty torrent list', async () => {
-      vi.mocked(qbittorrentClient.getTorrents).mockResolvedValueOnce([]);
+      (qbittorrentClient.getTorrents as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
 
       const result = await tool.execute({ action: 'list' });
 
@@ -78,7 +78,7 @@ describe('QBittorrentTool', () => {
     });
 
     it('returns structured JSON for torrent list', async () => {
-      vi.mocked(qbittorrentClient.getTorrents).mockResolvedValueOnce([
+      (qbittorrentClient.getTorrents as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         {
           hash: 'abc123',
           name: 'Test Movie',
@@ -130,7 +130,7 @@ describe('QBittorrentTool', () => {
 
   describe('JSON output format - details action', () => {
     it('returns structured JSON for torrent details', async () => {
-      vi.mocked(qbittorrentClient.getTorrentProperties).mockResolvedValueOnce({
+      (qbittorrentClient.getTorrentProperties as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         hash: 'abc123',
         name: 'Test Movie',
         comment: 'A test torrent',
@@ -163,7 +163,7 @@ describe('QBittorrentTool', () => {
 
   describe('JSON output format - speeds action', () => {
     it('returns structured JSON for speeds', async () => {
-      vi.mocked(qbittorrentClient.getTransferInfo).mockResolvedValueOnce({
+      (qbittorrentClient.getTransferInfo as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         dl_info_speed: 5242880, // 5 MB/s
         up_info_speed: 1048576, // 1 MB/s
         total_downloaded: 0,
@@ -184,7 +184,7 @@ describe('QBittorrentTool', () => {
 
   describe('JSON output format - transfer_info action', () => {
     it('returns structured JSON for transfer info', async () => {
-      vi.mocked(qbittorrentClient.getTransferInfo).mockResolvedValueOnce({
+      (qbittorrentClient.getTransferInfo as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         dl_info_speed: 2097152,
         up_info_speed: 524288,
         total_downloaded: 107374182400, // 100 GB
@@ -208,7 +208,7 @@ describe('QBittorrentTool', () => {
 
   describe('error handling', () => {
     it('returns error result when client throws', async () => {
-      vi.mocked(qbittorrentClient.getTorrents).mockRejectedValueOnce(
+      (qbittorrentClient.getTorrents as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error('Connection refused')
       );
 
