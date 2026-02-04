@@ -27,7 +27,7 @@ const ollamaClient = new OllamaClient({
 });
 
 // Event: Bot ready
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`Discord bot logged in as ${client.user?.tag}`);
   console.log(`Ollama model: ${config.ollama.model}`);
   console.log(`Allowed users: ${config.discord.allowedUsers.length}`);
