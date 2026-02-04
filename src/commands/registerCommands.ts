@@ -13,8 +13,6 @@ export async function registerCommands(): Promise<void> {
     await rest.put(Routes.applicationCommands(config.discord.clientId), {
       body: allCommands,
     });
-
-    logger.info('Successfully registered slash commands');
   } catch (error) {
     logger.error('Failed to register commands:', error);
   }
