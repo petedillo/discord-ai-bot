@@ -1,6 +1,6 @@
 // Logger utility with Pino for structured JSON logging
 
-import pino, { Logger as PinoLogger } from 'pino';
+import pino, { type Logger as PinoLogger } from 'pino';
 
 // Keep LogLevel enum for backwards compatibility with tests
 export enum LogLevel {

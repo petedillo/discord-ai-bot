@@ -21,7 +21,7 @@ describe('Logger', () => {
 
   function getLogMessages(spy: ReturnType<typeof vi.spyOn>): Array<{ level: number; msg: string; args?: unknown[] }> {
     return spy.mock.calls
-      .map(call => {
+      .map((call: unknown[]) => {
         const output = call[0]?.toString();
         if (!output) return null;
         try {
@@ -30,7 +30,7 @@ describe('Logger', () => {
           return null;
         }
       })
-      .filter((log): log is { level: number; msg: string; args?: unknown[] } => log !== null);
+      .filter((log: unknown): log is { level: number; msg: string; args?: unknown[] } => log !== null);
   }
 
   describe('Log level filtering', () => {
