@@ -123,13 +123,17 @@ Example:
 ```typescript
 import { BaseTool } from './BaseTool.js';
 
+interface MyToolParams {
+  input: string;
+}
+
 export class MyTool extends BaseTool {
   name = 'my_tool';
   description = 'Description of what this tool does';
   
-  async execute(params: any): Promise<string> {
+  async execute(params: MyToolParams): Promise<string> {
     // Tool implementation
-    return 'Result';
+    return `Processed: ${params.input}`;
   }
 }
 ```
