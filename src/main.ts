@@ -7,10 +7,12 @@ import { createInteractionHandler } from './events/interactionCreate.js';
 import { startMetricsServer } from './metrics/server.js';
 import { discordBotUp, discordWebsocketLatency } from './metrics/index.js';
 import { logger } from './utils/index.js';
+import { QBittorrentClient } from './clients/QBittorrentClient.js';
+import packageJson from '../package.json' with { type: 'json' };
 
-// Version info
-const VERSION = '2.0.0';
-const BUILD_DATE = '2026-02-02';
+// Version info - read dynamically from package.json
+const VERSION = packageJson.version;
+const BUILD_DATE = new Date().toISOString().split('T')[0];
 
 // Load tools (auto-registers them)
 await import('./tools/index.js');
@@ -43,6 +45,9 @@ client.once('clientReady', async () => {
   }, 30000); // Update every 30 seconds
 
   await registerCommands();
+  
+  // Print startup summary after everything is initialized
+  printStartupSummary();
 });
 
 // Track disconnection
@@ -71,6 +76,20 @@ function printStartupBanner(): void {
   logger.raw('═══════════════════════════════════════════════════════');
 }
 
+/**
+ * Print startup summary with all service statuses
+ */
+function printStartupSummary(): void {
+  logger.raw('');
+  logger.raw('═══════════════════════════════════════════════════════');
+  logger.raw('  Startup Summary');
+  logger.raw('═══════════════════════════════════════════════════════');
+  logger.info('✓ Discord bot ready');
+  logger.info('✓ Slash commands registered');
+  logger.raw('═══════════════════════════════════════════════════════');
+  logger.raw('');
+}
+
 // Start bot
 export async function start(): Promise<void> {
   printStartupBanner();
@@ -79,12 +98,25 @@ export async function start(): Promise<void> {
   if (config.metrics.enabled) {
     try {
       await startMetricsServer(config.metrics.port);
-      logger.info(`[Metrics] Server enabled on port ${config.metrics.port}`);
+      logger.info(`[Metrics] Server listening on port ${config.metrics.port}`);
     } catch (error) {
       logger.error('[Metrics] Failed to start server:', error);
     }
   } else {
     logger.debug('[Metrics] Server disabled');
+  }
+
+  // Check qBittorrent client availability if enabled
+  if (config.qbittorrent.enabled) {
+    const qbitClient = new QBittorrentClient(config.qbittorrent.host);
+    const isAvailable = await qbitClient.isAvailable();
+    if (isAvailable) {
+      logger.info('[qBittorrent] Client is available');
+    } else {
+      logger.warn('[qBittorrent] Client is not available');
+    }
+  } else {
+    logger.debug('[qBittorrent] Client disabled');
   }
 
   await client.login(config.discord.token);
