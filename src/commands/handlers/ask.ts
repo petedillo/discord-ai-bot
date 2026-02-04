@@ -2,7 +2,7 @@
 import { EmbedBuilder, type ChatInputCommandInteraction } from 'discord.js';
 import type { OllamaClient } from '../../ai/OllamaClient.js';
 import { ToolExecutor } from '../../ai/ToolExecutor.js';
-import { isUserAuthorized } from '../../utils/permissions.js';
+import { isUserAuthorized, logger } from '../../utils/index.js';
 
 function truncate(text: string | undefined, maxLength: number): string {
   if (!text) return 'No response';
@@ -22,7 +22,7 @@ async function sendFullResponseDM(
     }
     await interaction.followUp({ content: 'Full answer sent to your DMs.', ephemeral: true });
   } catch (dmErr) {
-    console.warn(
+    logger.warn(
       'Could not DM user; falling back to ephemeral follow-ups:',
       dmErr instanceof Error ? dmErr.message : dmErr
     );
@@ -32,7 +32,7 @@ async function sendFullResponseDM(
         await interaction.followUp({ content: chunk, ephemeral: true });
       }
     } catch (followErr) {
-      console.error('Failed to send full answer in follow-ups:', followErr);
+      logger.error('Failed to send full answer in follow-ups:', followErr);
     }
   }
 }
@@ -50,7 +50,7 @@ export async function handleAskCommand(
         ephemeral: true,
       });
     } catch (err) {
-      console.warn('Auth reply failed:', err instanceof Error ? err.message : err);
+      logger.warn('Auth reply failed:', err instanceof Error ? err.message : err);
     }
     return;
   }
@@ -59,7 +59,7 @@ export async function handleAskCommand(
   try {
     await interaction.deferReply();
   } catch (deferErr) {
-    console.error(
+    logger.error(
       'deferReply failed - interaction likely expired:',
       deferErr instanceof Error ? deferErr.message : deferErr
     );
@@ -103,7 +103,7 @@ export async function handleAskCommand(
     try {
       await interaction.editReply({ embeds: [embed] });
     } catch (replyErr) {
-      console.error(
+      logger.error(
         'Failed to send embed reply:',
         replyErr instanceof Error ? replyErr.message : replyErr
       );
@@ -114,13 +114,13 @@ export async function handleAskCommand(
       await sendFullResponseDM(interaction, result.response);
     }
   } catch (error) {
-    console.error('Ask command error:', error);
+    logger.error('Ask command error:', error);
     try {
       await interaction.editReply({
         content: 'Failed to get AI response. Please try again later.',
       });
     } catch (errReply) {
-      console.error('Failed to send error reply:', errReply instanceof Error ? errReply.message : errReply);
+      logger.error('Failed to send error reply:', errReply instanceof Error ? errReply.message : errReply);
     }
   }
 }

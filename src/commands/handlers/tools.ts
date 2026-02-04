@@ -1,6 +1,7 @@
 // /tools command handler - list available AI tools
 import { EmbedBuilder, type ChatInputCommandInteraction } from 'discord.js';
 import { registry } from '../../ai/ToolRegistry.js';
+import { logger } from '../../utils/index.js';
 
 export async function handleToolsCommand(
   interaction: ChatInputCommandInteraction
@@ -32,14 +33,14 @@ export async function handleToolsCommand(
   try {
     await interaction.reply({ embeds: [embed] });
   } catch (replyErr) {
-    console.warn(
+    logger.warn(
       'Failed to send tools embed reply:',
       replyErr instanceof Error ? replyErr.message : replyErr
     );
     try {
       await interaction.followUp({ content: 'Failed to send tools list.', ephemeral: true });
     } catch (fuErr) {
-      console.error('followUp failed:', fuErr);
+      logger.error('followUp failed:', fuErr);
     }
   }
 }

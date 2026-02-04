@@ -4,6 +4,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registry } from '../ai/ToolRegistry.js';
 import type { ITool } from '../ai/types.js';
+import { logger } from '../utils/index.js';
 
 // Re-export for convenience
 export { BaseTool } from './BaseTool.js';
@@ -22,11 +23,11 @@ for (const file of toolFiles) {
     if (tool?.name && tool?.schema && typeof tool.execute === 'function') {
       registry.register(tool);
     } else {
-      console.warn(`Skipping invalid tool file: ${file}`);
+      logger.warn(`Skipping invalid tool file: ${file}`);
     }
   } catch (error) {
-    console.error(`Failed to load tool from ${file}:`, error);
+    logger.error(`Failed to load tool from ${file}:`, error);
   }
 }
 
-console.log(`Loaded ${toolFiles.length} tools: ${registry.getToolNames().join(', ')}`);
+logger.debug(`Loaded ${toolFiles.length} tools: ${registry.getToolNames().join(', ')}`);

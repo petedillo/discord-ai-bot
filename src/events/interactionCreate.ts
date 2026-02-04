@@ -3,6 +3,7 @@ import type { Interaction } from 'discord.js';
 import type { OllamaClient } from '../ai/OllamaClient.js';
 import { handleAskCommand, handleInfoCommand, handleToolsCommand } from '../commands/handlers/index.js';
 import { discordMessagesProcessed, discordRequestDuration } from '../metrics/index.js';
+import { logger } from '../utils/index.js';
 
 export function createInteractionHandler(
   ollamaClient: OllamaClient,
@@ -27,7 +28,7 @@ export function createInteractionHandler(
           await handleToolsCommand(interaction);
           break;
         default:
-          console.warn(`Unknown command: ${commandName}`);
+          logger.warn(`Unknown command: ${commandName}`);
           status = 'error';
       }
     } catch (error) {

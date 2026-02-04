@@ -3,6 +3,7 @@ import { Ollama } from 'ollama';
 import type { ChatResponse, Message } from 'ollama';
 import type { OllamaToolDefinition } from './types.js';
 import { ollamaAvailable, ollamaRequestDuration } from '../metrics/index.js';
+import { logger } from '../utils/index.js';
 
 export interface OllamaClientConfig {
   host: string;
@@ -63,7 +64,7 @@ export class OllamaClient {
       ollamaAvailable.set(1);
       return true;
     } catch (error) {
-      console.warn('Ollama service unavailable:', error instanceof Error ? error.message : error);
+      logger.warn('Ollama service unavailable:', error instanceof Error ? error.message : error);
       ollamaAvailable.set(0);
       return false;
     }
