@@ -112,8 +112,10 @@ ${hints}`;
         // Record duration metric
         toolExecutionDuration.labels(toolName).observe(durationSeconds);
         
-        // Basic logging
+        // Detailed logging for debugging
         console.log(`[ToolExecutor] Tool '${toolName}' executed in ${durationMs}ms`);
+        console.log(`[ToolExecutor] Args: ${JSON.stringify(toolArgs)}`);
+        console.log(`[ToolExecutor] Result: ${JSON.stringify(result).substring(0, 500)}`);
 
         toolsUsed.push({ name: toolName, args: toolArgs, result, durationMs });
 
