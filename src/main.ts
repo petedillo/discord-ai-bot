@@ -91,6 +91,7 @@ function printStartupSummary(): void {
 // Start bot
 export async function start(): Promise<void> {
   printStartupBanner();
+  logger.raw('');
 
   // Start metrics server if enabled
   if (config.metrics.enabled) {
@@ -117,6 +118,7 @@ export async function start(): Promise<void> {
     logger.debug('[qBittorrent] Client disabled');
   }
 
+  logger.raw('');
   await client.login(config.discord.token);
 }
 
