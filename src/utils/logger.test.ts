@@ -2,25 +2,36 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Logger, LogLevel } from './logger.js';
 
 describe('Logger', () => {
-  let consoleSpy: {
-    log: ReturnType<typeof vi.spyOn>;
-    warn: ReturnType<typeof vi.spyOn>;
-    error: ReturnType<typeof vi.spyOn>;
-  };
+  let stdoutSpy: ReturnType<typeof vi.spyOn>;
+  let stderrSpy: ReturnType<typeof vi.spyOn>;
+  let consoleSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleSpy = {
-      log: vi.spyOn(console, 'log').mockImplementation(() => {}),
-      warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
-      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
-    };
+    // Pino writes to stdout/stderr, not console.log/warn/error
+    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    consoleSpy.log.mockRestore();
-    consoleSpy.warn.mockRestore();
-    consoleSpy.error.mockRestore();
+    stdoutSpy.mockRestore();
+    stderrSpy.mockRestore();
+    consoleSpy.mockRestore();
   });
+
+  function getLogMessages(spy: ReturnType<typeof vi.spyOn>): Array<{ level: number; msg: string; args?: unknown[] }> {
+    return spy.mock.calls
+      .map(call => {
+        const output = call[0]?.toString();
+        if (!output) return null;
+        try {
+          return JSON.parse(output);
+        } catch {
+          return null;
+        }
+      })
+      .filter((log): log is { level: number; msg: string; args?: unknown[] } => log !== null);
+  }
 
   describe('Log level filtering', () => {
     it('should log all levels when set to DEBUG', () => {
@@ -31,9 +42,14 @@ describe('Logger', () => {
       logger.warn('warn message');
       logger.error('error message');
 
-      expect(consoleSpy.log).toHaveBeenCalledTimes(2); // debug + info
-      expect(consoleSpy.warn).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.error).toHaveBeenCalledTimes(1);
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThanOrEqual(4);
+      
+      const messages = logs.map(l => l.msg);
+      expect(messages).toContain('debug message');
+      expect(messages).toContain('info message');
+      expect(messages).toContain('warn message');
+      expect(messages).toContain('error message');
     });
 
     it('should only log info and above when set to INFO', () => {
@@ -44,9 +60,13 @@ describe('Logger', () => {
       logger.warn('warn message');
       logger.error('error message');
 
-      expect(consoleSpy.log).toHaveBeenCalledTimes(1); // info only
-      expect(consoleSpy.warn).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.error).toHaveBeenCalledTimes(1);
+      const logs = getLogMessages(stdoutSpy);
+      const messages = logs.map(l => l.msg);
+      
+      expect(messages).not.toContain('debug message');
+      expect(messages).toContain('info message');
+      expect(messages).toContain('warn message');
+      expect(messages).toContain('error message');
     });
 
     it('should only log warn and above when set to WARN', () => {
@@ -57,9 +77,13 @@ describe('Logger', () => {
       logger.warn('warn message');
       logger.error('error message');
 
-      expect(consoleSpy.log).not.toHaveBeenCalled();
-      expect(consoleSpy.warn).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.error).toHaveBeenCalledTimes(1);
+      const logs = getLogMessages(stdoutSpy);
+      const messages = logs.map(l => l.msg);
+      
+      expect(messages).not.toContain('debug message');
+      expect(messages).not.toContain('info message');
+      expect(messages).toContain('warn message');
+      expect(messages).toContain('error message');
     });
 
     it('should only log errors when set to ERROR', () => {
@@ -70,9 +94,13 @@ describe('Logger', () => {
       logger.warn('warn message');
       logger.error('error message');
 
-      expect(consoleSpy.log).not.toHaveBeenCalled();
-      expect(consoleSpy.warn).not.toHaveBeenCalled();
-      expect(consoleSpy.error).toHaveBeenCalledTimes(1);
+      const logs = getLogMessages(stdoutSpy);
+      const messages = logs.map(l => l.msg);
+      
+      expect(messages).not.toContain('debug message');
+      expect(messages).not.toContain('info message');
+      expect(messages).not.toContain('warn message');
+      expect(messages).toContain('error message');
     });
 
     it('should log nothing when set to SILENT', () => {
@@ -83,65 +111,77 @@ describe('Logger', () => {
       logger.warn('warn message');
       logger.error('error message');
 
-      expect(consoleSpy.log).not.toHaveBeenCalled();
-      expect(consoleSpy.warn).not.toHaveBeenCalled();
-      expect(consoleSpy.error).not.toHaveBeenCalled();
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBe(0);
     });
   });
 
   describe('Timestamps', () => {
-    it('should add timestamps when timestamps=true', () => {
+    it('should include timestamps in JSON output', () => {
       const logger = new Logger(LogLevel.DEBUG, true);
       logger.info('test message');
 
-      expect(consoleSpy.log).toHaveBeenCalledTimes(1);
-      const callArg = consoleSpy.log.mock.calls[0]?.[0] as string;
-      expect(callArg).toMatch(/^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]).toHaveProperty('time');
     });
 
-    it('should not add timestamps when timestamps=false', () => {
+    it('should include timestamps even when timestamps=false (Pino always includes time)', () => {
       const logger = new Logger(LogLevel.DEBUG, false);
       logger.info('test message');
 
-      expect(consoleSpy.log).toHaveBeenCalledTimes(1);
-      const callArg = consoleSpy.log.mock.calls[0]?.[0] as string;
-      expect(callArg).toBe('test message');
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      // Pino always includes time field, timestamps param is ignored for compatibility
+      expect(logs[0]).toHaveProperty('time');
     });
   });
 
   describe('Prefix', () => {
-    it('should include prefix in log messages', () => {
+    it('should include name in log messages', () => {
       const logger = new Logger(LogLevel.DEBUG, false, 'TestModule');
       logger.info('test message');
 
-      expect(consoleSpy.log).toHaveBeenCalledWith('[TestModule] test message');
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]).toHaveProperty('name', 'TestModule');
+      expect(logs[0]?.msg).toBe('test message');
     });
 
-    it('should not include prefix when empty', () => {
+    it('should not include name when empty', () => {
       const logger = new Logger(LogLevel.DEBUG, false, '');
       logger.info('test message');
 
-      expect(consoleSpy.log).toHaveBeenCalledWith('test message');
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]).not.toHaveProperty('name');
+      expect(logs[0]?.msg).toBe('test message');
     });
   });
 
   describe('Child logger', () => {
-    it('should create child logger with combined prefix', () => {
+    it('should create child logger with name', () => {
       const parent = new Logger(LogLevel.DEBUG, false, 'Parent');
       const child = parent.child('Child');
 
       child.info('test message');
 
-      expect(consoleSpy.log).toHaveBeenCalledWith('[Parent:Child] test message');
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]).toHaveProperty('name', 'Child');
+      expect(logs[0]?.msg).toBe('test message');
     });
 
-    it('should create child logger with just the child prefix when parent has no prefix', () => {
+    it('should create child logger with just the child name when parent has no prefix', () => {
       const parent = new Logger(LogLevel.DEBUG, false);
       const child = parent.child('Child');
 
       child.info('test message');
 
-      expect(consoleSpy.log).toHaveBeenCalledWith('[Child] test message');
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]).toHaveProperty('name', 'Child');
+      expect(logs[0]?.msg).toBe('test message');
     });
 
     it('should inherit log level from parent', () => {
@@ -152,8 +192,12 @@ describe('Logger', () => {
       child.info('info message');
       child.warn('warn message');
 
-      expect(consoleSpy.log).not.toHaveBeenCalled();
-      expect(consoleSpy.warn).toHaveBeenCalledTimes(1);
+      const logs = getLogMessages(stdoutSpy);
+      const messages = logs.map(l => l.msg);
+      
+      expect(messages).not.toContain('debug message');
+      expect(messages).not.toContain('info message');
+      expect(messages).toContain('warn message');
     });
 
     it('should inherit timestamp setting from parent', () => {
@@ -162,8 +206,9 @@ describe('Logger', () => {
 
       child.info('test message');
 
-      const callArg = consoleSpy.log.mock.calls[0]?.[0] as string;
-      expect(callArg).toMatch(/^\[\d{4}-\d{2}-\d{2}T/);
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]).toHaveProperty('time');
     });
   });
 
@@ -173,7 +218,7 @@ describe('Logger', () => {
 
       logger.raw('raw message');
 
-      expect(consoleSpy.log).toHaveBeenCalledWith('raw message');
+      expect(consoleSpy).toHaveBeenCalledWith('raw message');
     });
 
     it('should not format raw messages', () => {
@@ -181,26 +226,33 @@ describe('Logger', () => {
 
       logger.raw('raw message');
 
-      expect(consoleSpy.log).toHaveBeenCalledWith('raw message');
+      expect(consoleSpy).toHaveBeenCalledWith('raw message');
     });
   });
 
   describe('Additional arguments', () => {
-    it('should pass additional arguments to console methods', () => {
+    it('should include additional arguments in args field', () => {
       const logger = new Logger(LogLevel.DEBUG, false);
       const extraData = { key: 'value' };
 
       logger.info('test message', extraData);
 
-      expect(consoleSpy.log).toHaveBeenCalledWith('test message', extraData);
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]?.msg).toBe('test message');
+      expect(logs[0]).toHaveProperty('args');
+      expect(logs[0]?.args).toEqual([extraData]);
     });
 
-    it('should pass multiple additional arguments', () => {
+    it('should pass multiple additional arguments in args array', () => {
       const logger = new Logger(LogLevel.DEBUG, false);
 
       logger.error('error message', 'arg1', 123, { foo: 'bar' });
 
-      expect(consoleSpy.error).toHaveBeenCalledWith('error message', 'arg1', 123, { foo: 'bar' });
+      const logs = getLogMessages(stdoutSpy);
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0]?.msg).toBe('error message');
+      expect(logs[0]?.args).toEqual(['arg1', 123, { foo: 'bar' }]);
     });
   });
 

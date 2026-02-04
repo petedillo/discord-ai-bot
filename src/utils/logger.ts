@@ -1,5 +1,8 @@
-// Logger utility with environment-based log levels
+// Logger utility with Pino for structured JSON logging
 
+import pino, { Logger as PinoLogger } from 'pino';
+
+// Keep LogLevel enum for backwards compatibility with tests
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -16,41 +19,45 @@ const LOG_LEVEL_MAP: Record<string, LogLevel> = {
   silent: LogLevel.SILENT,
 };
 
+const levelToPino: Record<LogLevel, string> = {
+  [LogLevel.DEBUG]: 'debug',
+  [LogLevel.INFO]: 'info',
+  [LogLevel.WARN]: 'warn',
+  [LogLevel.ERROR]: 'error',
+  [LogLevel.SILENT]: 'silent',
+};
+
+const pinoToLevel: Record<string, LogLevel> = {
+  debug: LogLevel.DEBUG,
+  info: LogLevel.INFO,
+  warn: LogLevel.WARN,
+  error: LogLevel.ERROR,
+  silent: LogLevel.SILENT,
+};
+
+/**
+ * Wrapper class to maintain API compatibility with existing code
+ */
 export class Logger {
-  private readonly level: LogLevel;
-  private readonly timestamps: boolean;
-  private readonly prefix: string;
+  private pino: PinoLogger;
 
-  constructor(level: LogLevel, timestamps: boolean, prefix = '') {
-    this.level = level;
-    this.timestamps = timestamps;
-    this.prefix = prefix;
-  }
+  constructor(level?: LogLevel, _timestamps?: boolean, prefix?: string) {
+    const pinoLevel = level !== undefined ? levelToPino[level] : getLogLevel();
 
-  /**
-   * Format a log message with optional timestamp and prefix
-   */
-  private format(message: string): string {
-    const parts: string[] = [];
-
-    if (this.timestamps) {
-      parts.push(`[${new Date().toISOString()}]`);
-    }
-
-    if (this.prefix) {
-      parts.push(`[${this.prefix}]`);
-    }
-
-    parts.push(message);
-    return parts.join(' ');
+    this.pino = pino({
+      level: pinoLevel,
+      name: prefix || undefined,
+    });
   }
 
   /**
    * Log debug-level message (dev-only verbose logging)
    */
   debug(message: string, ...args: unknown[]): void {
-    if (this.level <= LogLevel.DEBUG) {
-      console.log(this.format(message), ...args);
+    if (args.length > 0) {
+      this.pino.debug({ args }, message);
+    } else {
+      this.pino.debug(message);
     }
   }
 
@@ -58,8 +65,10 @@ export class Logger {
    * Log info-level message (operational status)
    */
   info(message: string, ...args: unknown[]): void {
-    if (this.level <= LogLevel.INFO) {
-      console.log(this.format(message), ...args);
+    if (args.length > 0) {
+      this.pino.info({ args }, message);
+    } else {
+      this.pino.info(message);
     }
   }
 
@@ -67,8 +76,10 @@ export class Logger {
    * Log warning-level message (non-fatal issues)
    */
   warn(message: string, ...args: unknown[]): void {
-    if (this.level <= LogLevel.WARN) {
-      console.warn(this.format(message), ...args);
+    if (args.length > 0) {
+      this.pino.warn({ args }, message);
+    } else {
+      this.pino.warn(message);
     }
   }
 
@@ -76,8 +87,10 @@ export class Logger {
    * Log error-level message (errors and failures)
    */
   error(message: string, ...args: unknown[]): void {
-    if (this.level <= LogLevel.ERROR) {
-      console.error(this.format(message), ...args);
+    if (args.length > 0) {
+      this.pino.error({ args }, message);
+    } else {
+      this.pino.error(message);
     }
   }
 
@@ -93,15 +106,17 @@ export class Logger {
    * Create a child logger with an additional prefix
    */
   child(prefix: string): Logger {
-    const newPrefix = this.prefix ? `${this.prefix}:${prefix}` : prefix;
-    return new Logger(this.level, this.timestamps, newPrefix);
+    const child = new Logger();
+    child.pino = this.pino.child({ name: prefix });
+    return child;
   }
 
   /**
    * Get the current log level
    */
   getLevel(): LogLevel {
-    return this.level;
+    const currentLevel = this.pino.level;
+    return pinoToLevel[currentLevel] ?? LogLevel.INFO;
   }
 }
 
@@ -121,13 +136,14 @@ function parseLogLevel(): LogLevel {
 }
 
 /**
- * Determine if timestamps should be shown
+ * Get Pino log level string
  */
-function shouldShowTimestamps(): boolean {
-  return process.env.NODE_ENV === 'production';
+function getLogLevel(): string {
+  const level = parseLogLevel();
+  return levelToPino[level]!;
 }
 
 // Singleton logger instance
-export const logger = new Logger(parseLogLevel(), shouldShowTimestamps());
+export const logger = new Logger(parseLogLevel());
 
 export default logger;
