@@ -51,7 +51,6 @@ export async function startMetricsServer(port: number): Promise<http.Server> {
     }
 
     server.listen(port, () => {
-      logger.info(`[Metrics] Server listening on port ${port}`);
       resolve(server as http.Server);
     });
 
