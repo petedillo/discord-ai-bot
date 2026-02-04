@@ -12,7 +12,6 @@ import packageJson from '../package.json' with { type: 'json' };
 
 // Version info - read dynamically from package.json
 const VERSION = packageJson.version;
-const BUILD_DATE = new Date().toISOString().split('T')[0];
 
 // Load tools (auto-registers them)
 await import('./tools/index.js');
@@ -71,7 +70,6 @@ function printStartupBanner(): void {
   const startupTime = new Date().toISOString();
   logger.raw('═══════════════════════════════════════════════════════');
   logger.raw(`  Discord AI Bot v${VERSION}`);
-  logger.raw(`  Build: ${BUILD_DATE}`);
   logger.raw(`  Started: ${startupTime}`);
   logger.raw('═══════════════════════════════════════════════════════');
 }
