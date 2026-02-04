@@ -118,6 +118,14 @@ export async function start(): Promise<void> {
     logger.debug('[qBittorrent] Client disabled');
   }
 
+  // Check Ollama service availability
+  const isOllamaAvailable = await ollamaClient.isAvailable();
+  if (isOllamaAvailable) {
+    logger.info('[Ollama] Service is available');
+  } else {
+    logger.warn('[Ollama] Service is not available');
+  }
+
   logger.raw('');
   await client.login(config.discord.token);
 }
