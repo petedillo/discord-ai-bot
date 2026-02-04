@@ -81,9 +81,9 @@ describe('SummarizerClient', () => {
 
       await client.summarize({ data: 'test' }, 'what is downloading?');
 
-      const chatCall = (mockOllama.chat as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      const userMessage = chatCall.messages.find((m: { role: string }) => m.role === 'user');
-      expect(userMessage?.content).toContain('what is downloading?');
+      const chatCall = (mockOllama.chat as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+      const userMessage = chatCall.messages.find((m: { role: string }) => m.role === 'user') as { content: string };
+      expect(userMessage.content).toContain('what is downloading?');
     });
 
     it('should include JSON data in prompt', async () => {
@@ -94,9 +94,9 @@ describe('SummarizerClient', () => {
       const testData = { torrents: [{ name: 'Test Movie' }] };
       await client.summarize(testData, 'query');
 
-      const chatCall = (mockOllama.chat as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      const userMessage = chatCall.messages.find((m: { role: string }) => m.role === 'user');
-      expect(userMessage?.content).toContain('Test Movie');
+      const chatCall = (mockOllama.chat as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+      const userMessage = chatCall.messages.find((m: { role: string }) => m.role === 'user') as { content: string };
+      expect(userMessage.content).toContain('Test Movie');
     });
 
     it('should return fallback on empty response', async () => {
