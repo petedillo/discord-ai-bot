@@ -9,8 +9,8 @@ import type {
   ToolResult,
 } from './types.js';
 import { toolExecutionsTotal, toolExecutionDuration } from '../metrics/index.js';
-import { config } from '../config.js';
 import { getSummarizer } from './SummarizerClient.js';
+import { logger } from '../utils/index.js';
 
 // Tools that should have their results summarized by the small model
 const SUMMARIZABLE_TOOLS = new Set(['qbittorrent']);
@@ -29,15 +29,6 @@ export class ToolExecutor {
   constructor(ollamaClient: OllamaClient, maxIterations = 5) {
     this.ollamaClient = ollamaClient;
     this.maxIterations = maxIterations;
-  }
-
-  /**
-   * Conditional logger - only logs when TOOL_EXECUTOR_LOGGING is enabled
-   */
-  private log(message: string): void {
-    if (config.toolExecutor.loggingEnabled) {
-      console.log(`[ToolExecutor] ${message}`);
-    }
   }
 
   /**
@@ -126,10 +117,10 @@ ${hints}`;
         // Record duration metric
         toolExecutionDuration.labels(toolName).observe(durationSeconds);
         
-        // Detailed logging for debugging (controlled by feature flag)
-        this.log(`Tool '${toolName}' executed in ${durationMs}ms`);
-        this.log(`Args: ${JSON.stringify(toolArgs)}`);
-        this.log(`Result: ${JSON.stringify(result).substring(0, 500)}`);
+        // Detailed logging for debugging
+        logger.debug(`[ToolExecutor] Tool '${toolName}' executed in ${durationMs}ms`);
+        logger.debug(`[ToolExecutor] Args: ${JSON.stringify(toolArgs)}`);
+        logger.debug(`[ToolExecutor] Result: ${JSON.stringify(result).substring(0, 500)}`);
 
         toolsUsed.push({ name: toolName, args: toolArgs, result, durationMs });
 
@@ -139,12 +130,12 @@ ${hints}`;
 
         if (summarizer && SUMMARIZABLE_TOOLS.has(toolName) && result.success) {
           try {
-            this.log(`Summarizing ${toolName} result with small model...`);
+            logger.debug(`[ToolExecutor] Summarizing ${toolName} result with small model...`);
             const summary = await summarizer.summarize(result, userMessage);
             resultContent = JSON.stringify({ success: true, summary });
-            this.log(`Summary: ${summary.substring(0, 200)}`);
+            logger.debug(`[ToolExecutor] Summary: ${summary.substring(0, 200)}`);
           } catch (summarizeError) {
-            this.log(`Summarization failed, using raw result: ${summarizeError}`);
+            logger.debug(`[ToolExecutor] Summarization failed, using raw result: ${summarizeError}`);
             // Fall back to raw JSON if summarization fails
           }
         }

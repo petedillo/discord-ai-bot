@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { getMetrics } from './index.js';
+import { logger } from '../utils/index.js';
 
 let server: http.Server | null = null;
 
@@ -50,7 +51,7 @@ export async function startMetricsServer(port: number): Promise<http.Server> {
     }
 
     server.listen(port, () => {
-      console.log(`[Metrics] Server listening on port ${port}`);
+      logger.info(`[Metrics] Server listening on port ${port}`);
       resolve(server as http.Server);
     });
 
@@ -79,7 +80,7 @@ export async function stopMetricsServer(): Promise<void> {
         reject(error);
       } else {
         server = null;
-        console.log('[Metrics] Server stopped');
+        logger.debug('[Metrics] Server stopped');
         resolve();
       }
     });

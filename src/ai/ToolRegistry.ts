@@ -1,5 +1,6 @@
 // Tool Registry - manages tool definitions and metadata
 import type { ITool, OllamaToolDefinition, ToolDescription } from './types.js';
+import { logger } from '../utils/index.js';
 
 export class ToolRegistry {
   private readonly tools = new Map<string, ITool>();
@@ -12,7 +13,7 @@ export class ToolRegistry {
       throw new Error('Invalid tool: missing name, schema, or execute method');
     }
     this.tools.set(tool.name, tool);
-    console.log(`Registered tool: ${tool.name}`);
+    logger.debug(`Registered tool: ${tool.name}`);
   }
 
   /**

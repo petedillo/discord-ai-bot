@@ -2,6 +2,7 @@
 import { EmbedBuilder, type ChatInputCommandInteraction } from 'discord.js';
 import type { OllamaClient } from '../../ai/OllamaClient.js';
 import { registry } from '../../ai/ToolRegistry.js';
+import { logger } from '../../utils/index.js';
 
 export async function handleInfoCommand(
   interaction: ChatInputCommandInteraction,
@@ -12,7 +13,7 @@ export async function handleInfoCommand(
   try {
     await interaction.deferReply();
   } catch (deferErr) {
-    console.warn(
+    logger.warn(
       'deferReply failed:',
       deferErr instanceof Error ? deferErr.message : deferErr
     );
@@ -43,7 +44,7 @@ export async function handleInfoCommand(
     try {
       await interaction.editReply({ embeds: [embed] });
     } catch (replyErr) {
-      console.warn(
+      logger.warn(
         'Failed to send info embed reply:',
         replyErr instanceof Error ? replyErr.message : replyErr
       );
@@ -53,15 +54,15 @@ export async function handleInfoCommand(
           ephemeral: true,
         });
       } catch (fuErr) {
-        console.error('followUp failed:', fuErr);
+        logger.error('followUp failed:', fuErr);
       }
     }
   } catch (error) {
-    console.error('Info command error:', error);
+    logger.error('Info command error:', error);
     try {
       await interaction.editReply({ content: 'Failed to retrieve bot information.' });
     } catch (errReply) {
-      console.error('Failed to send error reply:', errReply);
+      logger.error('Failed to send error reply:', errReply);
     }
   }
 }

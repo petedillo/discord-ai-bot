@@ -6,6 +6,7 @@ import { registerCommands } from './commands/registerCommands.js';
 import { createInteractionHandler } from './events/interactionCreate.js';
 import { startMetricsServer } from './metrics/server.js';
 import { discordBotUp, discordWebsocketLatency } from './metrics/index.js';
+import { logger } from './utils/index.js';
 
 // Version info
 const VERSION = '2.0.0';
@@ -28,9 +29,9 @@ const ollamaClient = new OllamaClient({
 
 // Event: Bot ready
 client.once('clientReady', async () => {
-  console.log(`Discord bot logged in as ${client.user?.tag}`);
-  console.log(`Ollama model: ${config.ollama.model}`);
-  console.log(`Allowed users: ${config.discord.allowedUsers.length}`);
+  logger.info(`Discord bot logged in as ${client.user?.tag}`);
+  logger.debug(`Ollama model: ${config.ollama.model}`);
+  logger.debug(`Allowed users: ${config.discord.allowedUsers.length}`);
 
   // Set bot connection status
   discordBotUp.set(1);
@@ -46,40 +47,46 @@ client.once('clientReady', async () => {
 
 // Track disconnection
 client.on('disconnect', () => {
-  console.log('Discord bot disconnected');
+  logger.warn('Discord bot disconnected');
   discordBotUp.set(0);
 });
 
 client.on('error', (error) => {
-  console.error('Discord bot error:', error);
+  logger.error('Discord bot error:', error);
   discordBotUp.set(0);
 });
 
 // Event: Interaction (slash command)
 client.on('interactionCreate', createInteractionHandler(ollamaClient, config.discord.allowedUsers));
 
+/**
+ * Print startup banner using raw output
+ */
+function printStartupBanner(): void {
+  const startupTime = new Date().toISOString();
+  logger.raw('═══════════════════════════════════════════════════════');
+  logger.raw(`  Discord AI Bot v${VERSION}`);
+  logger.raw(`  Build: ${BUILD_DATE}`);
+  logger.raw(`  Started: ${startupTime}`);
+  logger.raw('═══════════════════════════════════════════════════════');
+}
+
 // Start bot
 export async function start(): Promise<void> {
-  const startupTime = new Date().toISOString();
-  
-  console.log('═══════════════════════════════════════════════════════');
-  console.log(`  Discord AI Bot v${VERSION}`);
-  console.log(`  Build: ${BUILD_DATE}`);
-  console.log(`  Started: ${startupTime}`);
-  console.log('═══════════════════════════════════════════════════════');
-  
+  printStartupBanner();
+
   // Start metrics server if enabled
   if (config.metrics.enabled) {
     try {
       await startMetricsServer(config.metrics.port);
-      console.log(`[Metrics] Server enabled on port ${config.metrics.port}`);
+      logger.info(`[Metrics] Server enabled on port ${config.metrics.port}`);
     } catch (error) {
-      console.error('[Metrics] Failed to start server:', error);
+      logger.error('[Metrics] Failed to start server:', error);
     }
   } else {
-    console.log('[Metrics] Server disabled');
+    logger.debug('[Metrics] Server disabled');
   }
-  
+
   await client.login(config.discord.token);
 }
 

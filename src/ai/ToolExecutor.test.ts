@@ -6,6 +6,7 @@ import { getMetrics, resetMetrics } from '../metrics/index.js';
 import type { ITool } from './types.js';
 import type { Ollama } from 'ollama';
 import * as SummarizerModule from './SummarizerClient.js';
+import * as LoggerModule from '../utils/logger.js';
 
 // Helper to create a mock Ollama client
 function createMockOllamaClient() {
@@ -193,19 +194,18 @@ describe('ToolExecutor Metrics', () => {
 });
 
 describe('ToolExecutor Logging', () => {
-  let consoleSpy: ReturnType<typeof vi.spyOn>;
+  let loggerDebugSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     resetMetrics();
-    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    loggerDebugSpy = vi.spyOn(LoggerModule.logger, 'debug').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
+    loggerDebugSpy.mockRestore();
   });
 
-  it('should log when TOOL_EXECUTOR_LOGGING is enabled', async () => {
-    // We need to test with config mocking - this tests the log method exists
+  it('should log tool execution details via logger.debug', async () => {
     const mockTool: ITool = {
       name: 'logging_test_tool',
       schema: {
@@ -244,6 +244,9 @@ describe('ToolExecutor Logging', () => {
 
     // The executor should have been created and processed the message
     expect(mockTool.execute).toHaveBeenCalled();
+    // Logger should have been called with debug messages
+    expect(loggerDebugSpy).toHaveBeenCalled();
+    expect(loggerDebugSpy).toHaveBeenCalledWith(expect.stringContaining('[ToolExecutor]'));
   });
 });
 

@@ -1,6 +1,7 @@
 // Summarizer Client - uses a small/fast Ollama model to summarize tool results
 import { Ollama } from 'ollama';
 import { config } from '../config.js';
+import { logger } from '../utils/index.js';
 
 export interface SummarizerConfig {
   host: string;
@@ -58,7 +59,7 @@ Provide a concise, friendly summary:`;
 
       return response.message.content || 'Unable to summarize data.';
     } catch (error) {
-      console.error('[SummarizerClient] Error:', error);
+      logger.error('[SummarizerClient] Error:', error);
       // Fallback: return a basic JSON string if summarization fails
       return `Data: ${JSON.stringify(data)}`;
     }

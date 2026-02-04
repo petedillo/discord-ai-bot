@@ -15,9 +15,6 @@ interface Config {
   tools: {
     maxIterations: number;
   };
-  toolExecutor: {
-    loggingEnabled: boolean;
-  };
   summarizer: {
     enabled: boolean;
     model: string;
@@ -58,9 +55,6 @@ export const config: Config = {
   },
   tools: {
     maxIterations: 5,
-  },
-  toolExecutor: {
-    loggingEnabled: getEnvVar('TOOL_EXECUTOR_LOGGING', 'false') === 'true',
   },
   summarizer: {
     enabled: getEnvVar('SUMMARIZER_ENABLED', 'true') === 'true',
